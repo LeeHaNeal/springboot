@@ -23,3 +23,7 @@ a {
 .imgwrap img{
 	width: 400px;
 }
+.outer {
+	width: 700px;
+	margin: 0 auto;
+}

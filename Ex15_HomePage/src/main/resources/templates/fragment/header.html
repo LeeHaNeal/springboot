@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <title>Insert title here</title>
+<link href="/css/index.css" rel="stylesheet">
 </head>
 <body>
 	<div th:fragment="fragment-menu">
@@ -34,8 +35,6 @@
 			<table>
 				<tr>
 					<td colspan="2">
-						<!-- <h3 th:text="${loginUser.name}"></h3> -->
-                        <!-- [[ 문자로 인식 ]]  -->
                          <h3>[[${loginUser.name}]]님 환영합니다.</h3>
 					</td>
 				</tr>
@@ -52,7 +51,7 @@
             <tr>
                 <td onclick="location.href='index'">Home</td>
                 <td>공지사항</td>
-                <td>게시판</td>
+                <td onclick="location.href='list'">게시판</td>
                 <td>찾아오는길</td>
             </tr>
         </table>

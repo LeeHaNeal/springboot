@@ -40,22 +40,18 @@ public class UserController {
 
     // 사용자 수정
     @PutMapping("/{id}")
-    public User updateUser(@PathVariable("id") String id, @RequestBody User user) {
+    public ResponseEntity<User> updateUser(@PathVariable("id") String id, @RequestBody User user) {
         User existingUser = userRepository.findById(id).orElse(null);
         if (existingUser != null) {
-            existingUser.setName(user.getName());
-            existingUser.setPasswordHash(user.getPasswordHash());
-            existingUser.setGender(user.getGender());
-            existingUser.setBirthDate(user.getBirthDate());
-            existingUser.setHeight(user.getHeight());
-            existingUser.setWeight(user.getWeight());
-            existingUser.setGoalWeight(user.getGoalWeight());
-            existingUser.setChallengeScore(user.getChallengeScore());
-            existingUser.setIsActive(user.getIsActive());
-            existingUser.setProfileImageUrl(user.getProfileImageUrl());
-            return userRepository.save(existingUser);
+            // 수정할 항목만 갱신
+            if (user.getHeight() != null) existingUser.setHeight(user.getHeight());
+            if (user.getWeight() != null) existingUser.setWeight(user.getWeight());
+            if (user.getGoalWeight() != null) existingUser.setGoalWeight(user.getGoalWeight());
+
+            userRepository.save(existingUser);
+            return ResponseEntity.ok(existingUser);
         }
-        return null;
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
     }
 
     // ✅ 운동 칼로리만 업데이트

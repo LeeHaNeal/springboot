@@ -8,14 +8,14 @@ import lombok.Setter;
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "USERS")
 @Getter
 @Setter
 @NoArgsConstructor
+@Table(name = "USERS") // 테이블 이름 명시
 public class User {
 
     @Id
-    @Column(name = "USER_ID")
+    @Column(name = "USER_ID") // USER_ID 컬럼 명시
     private String userId;
 
     @Column(name = "PASSWORD_HASH", nullable = false)

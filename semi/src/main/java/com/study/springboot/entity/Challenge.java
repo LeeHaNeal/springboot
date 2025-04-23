@@ -14,7 +14,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-@Table(name = "CHALLENGE") // 테이블 이름 명시
+@Table(name = "CHALLENGES") // 테이블 이름을 CHALLENGES로 수정
 public class Challenge {
 
     @Id
@@ -39,6 +39,5 @@ public class Challenge {
     @Column(name = "POINT_REWARD")
     private Integer pointReward;
 
-    @Column(name = "DESCRIPTION")
-    private String description;
 }
+

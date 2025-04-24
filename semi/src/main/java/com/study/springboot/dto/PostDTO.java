@@ -7,6 +7,9 @@ public class PostDTO {
     private String userName;
 
     // 생성자
+    public PostDTO() {
+    	
+    }
     public PostDTO(Long id, String title, String content, String userName) {
         this.id = id;
         this.title = title;
@@ -47,5 +50,3 @@ public class PostDTO {
 		this.userName = userName;
 	}
 }
-
-

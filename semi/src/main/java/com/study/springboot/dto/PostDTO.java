@@ -9,6 +9,8 @@ public class PostDTO {
     private String userId;
     private String userName;
     private LocalDateTime createdAt;
+    private Boolean isNotice;
+    
 
     // 🔑 비밀번호 인증용 필드 추가
     private String passwordHash;
@@ -68,6 +70,13 @@ public class PostDTO {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+    public Boolean getIsNotice() {
+        return isNotice;
+    }
+
+    public void setIsNotice(Boolean isNotice) {
+        this.isNotice = isNotice;
     }
 
 }

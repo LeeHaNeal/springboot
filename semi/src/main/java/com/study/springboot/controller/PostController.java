@@ -46,14 +46,13 @@ public class PostController {
     public ResponseEntity<?> createPost(@RequestBody Map<String, String> request) {
         String title = request.get("title");
         String content = request.get("content");
-        String userId = request.get("userId"); // 🔥 추가
+        String userId = request.get("userId");
         String passwordHash = request.get("passwordHash");
 
         if (title == null || content == null || passwordHash == null || userId == null) {
             return ResponseEntity.badRequest().body("입력값이 누락되었습니다.");
         }
 
-        // ID로 사용자 조회 후 비밀번호 체크
         Optional<User> userOpt = userRepository.findById(userId);
         if (userOpt.isEmpty()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("존재하지 않는 사용자입니다.");
@@ -69,15 +68,30 @@ public class PostController {
         post.setContent(content);
         post.setUser(user);
 
+        // ✅ 관리자라면 공지사항 설정
+        if ("admin".equals(user.getUserId())) {
+            post.setIsNotice(true);
+        } else {
+            post.setIsNotice(false);
+        }
+
         Post saved = postRepository.save(post);
         return ResponseEntity.ok(saved);
     }
+
 
     // 게시글 전체 조회
     @GetMapping
     public ResponseEntity<List<PostDTO>> getAllPosts() {
         try {
-            List<Post> posts = postRepository.findAllByOrderByIdDesc(); // 최신순 정렬
+        	List<Post> posts = postRepository.findAll().stream()
+        		    .sorted((a, b) -> {
+        		        // 공지 먼저, 그 안에서는 최신순
+        		        if (a.getIsNotice() && !b.getIsNotice()) return -1;
+        		        if (!a.getIsNotice() && b.getIsNotice()) return 1;
+        		        return b.getId().compareTo(a.getId()); // 최신순 정렬
+        		    })
+        		    .collect(Collectors.toList());
 
             if (posts.isEmpty()) return new ResponseEntity<>(HttpStatus.NO_CONTENT);
 
@@ -195,13 +209,14 @@ public class PostController {
             Post post = postRepository.findById(id)
                     .orElseThrow(() -> new RuntimeException("Post not found"));
 
-            if (!post.getUser().getUserId().equals(postDTO.getUserId())) {
+            // ✅ 관리자이거나 작성자 본인만 수정 가능
+            if (!post.getUser().getUserId().equals(postDTO.getUserId()) 
+                    && !postDTO.getUserId().equals("admin")) {
                 return new ResponseEntity<>("수정 권한 없음", HttpStatus.FORBIDDEN);
             }
 
             post.setTitle(postDTO.getTitle());
             post.setContent(postDTO.getContent());
-
             postRepository.save(post);
 
             return new ResponseEntity<>("수정 완료", HttpStatus.OK);
@@ -213,15 +228,25 @@ public class PostController {
 
     // 게시글 삭제
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deletePost(@PathVariable("id") Long id) {
+    public ResponseEntity<?> deletePost(@PathVariable("id") Long id, @RequestBody Map<String, String> request) {
+        String userId = request.get("userId"); // 🔥 프론트에서 전달 필요
+
         try {
+            Post post = postRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Post not found"));
+
+            // ✅ 관리자이거나 작성자 본인만 삭제 가능
+            if (!post.getUser().getUserId().equals(userId) && !"admin".equals(userId)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("삭제 권한 없음");
+            }
+
+            // 댓글 먼저 삭제
             List<Comment> comments = commentService.getCommentsByPostId(id);
             for (Comment comment : comments) {
                 commentService.deleteComment(comment.getId(), comment.getUser().getUserId());
             }
 
             postRepository.deleteById(id);
-
             return ResponseEntity.ok().build();
         } catch (Exception e) {
             e.printStackTrace();

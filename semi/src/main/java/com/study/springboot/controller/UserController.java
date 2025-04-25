@@ -1,6 +1,8 @@
 package com.study.springboot.controller;
 
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -33,8 +35,10 @@ public class UserController {
 
     @GetMapping
     public List<User> getAllUsers() {
-        return userRepository.findAll();
+        return StreamSupport.stream(userRepository.findAll().spliterator(), false)
+                            .collect(Collectors.toList());
     }
+
 
     @PostMapping
     public User createUser(@RequestBody User user) {

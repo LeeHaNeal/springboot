@@ -1,21 +1,19 @@
 package com.study.springboot.dto;
 
+import java.time.LocalDateTime;
+
 public class PostDTO {
-		private Long id;
-		private String title;
-	    private String content;
-	    private String userName;
-	    private String userId; // ✅ 변경: Long → String
+    private Long id;
+    private String title;
+    private String content;
+    private String userId;
+    private String userName;
+    private LocalDateTime createdAt;
 
-    public PostDTO() {}
+    // 🔑 비밀번호 인증용 필드 추가
+    private String passwordHash;
 
-    public PostDTO(Long id, String title, String content, String userName, String userId) {
-        this.id = id;
-        this.title = title;
-        this.content = content;
-        this.userName = userName;
-        this.userId = userId;
-    }
+    // --- Getter & Setter ---
 
     public Long getId() {
         return id;
@@ -41,6 +39,14 @@ public class PostDTO {
         this.content = content;
     }
 
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
+    }
+
     public String getUserName() {
         return userName;
     }
@@ -49,11 +55,19 @@ public class PostDTO {
         this.userName = userName;
     }
 
-    public String getUserId() {
-        return userId;
+    public String getPasswordHash() {
+        return passwordHash;
     }
 
-    public void setUserId(String userId) {
-        this.userId = userId;
+    public void setPasswordHash(String passwordHash) {
+        this.passwordHash = passwordHash;
     }
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
 }

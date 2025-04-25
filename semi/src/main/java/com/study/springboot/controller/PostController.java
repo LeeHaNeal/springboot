@@ -1,5 +1,23 @@
 package com.study.springboot.controller;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.study.springboot.dto.CommentDTO;
 import com.study.springboot.dto.PostDTO;
 import com.study.springboot.entity.Comment;
@@ -8,14 +26,6 @@ import com.study.springboot.entity.User;
 import com.study.springboot.repository.PostRepository;
 import com.study.springboot.repository.UserRepository;
 import com.study.springboot.service.CommentService;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/posts")
@@ -33,33 +43,42 @@ public class PostController {
 
     // 게시글 작성
     @PostMapping
-    public ResponseEntity<PostDTO> createPost(@RequestBody Post post) {
-        try {
-            User user = userRepository.findById(post.getUser().getUserId())
-                    .orElseThrow(() -> new RuntimeException("User not found"));
+    public ResponseEntity<?> createPost(@RequestBody Map<String, String> request) {
+        String title = request.get("title");
+        String content = request.get("content");
+        String userId = request.get("userId"); // 🔥 추가
+        String passwordHash = request.get("passwordHash");
 
-            post.setUser(user);
-            Post savedPost = postRepository.save(post);
-
-            PostDTO dto = new PostDTO();
-            dto.setId(savedPost.getId());
-            dto.setTitle(savedPost.getTitle());
-            dto.setContent(savedPost.getContent());
-            dto.setUserName(user.getName());
-            dto.setUserId(user.getUserId());
-
-            return new ResponseEntity<>(dto, HttpStatus.CREATED);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+        if (title == null || content == null || passwordHash == null || userId == null) {
+            return ResponseEntity.badRequest().body("입력값이 누락되었습니다.");
         }
+
+        // ID로 사용자 조회 후 비밀번호 체크
+        Optional<User> userOpt = userRepository.findById(userId);
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("존재하지 않는 사용자입니다.");
+        }
+
+        User user = userOpt.get();
+        if (!user.getPasswordHash().equals(passwordHash)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("비밀번호가 일치하지 않습니다.");
+        }
+
+        Post post = new Post();
+        post.setTitle(title);
+        post.setContent(content);
+        post.setUser(user);
+
+        Post saved = postRepository.save(post);
+        return ResponseEntity.ok(saved);
     }
 
     // 게시글 전체 조회
     @GetMapping
     public ResponseEntity<List<PostDTO>> getAllPosts() {
         try {
-            List<Post> posts = postRepository.findAll();
+            List<Post> posts = postRepository.findAllByOrderByIdDesc(); // 최신순 정렬
+
             if (posts.isEmpty()) return new ResponseEntity<>(HttpStatus.NO_CONTENT);
 
             List<PostDTO> dtos = posts.stream()
@@ -70,6 +89,7 @@ public class PostController {
                         dto.setContent(post.getContent());
                         dto.setUserName(post.getUser().getName());
                         dto.setUserId(post.getUser().getUserId());
+                        dto.setCreatedAt(post.getCreatedAt()); // ✅ 작성일 추가
                         return dto;
                     })
                     .collect(Collectors.toList());
@@ -94,6 +114,7 @@ public class PostController {
             dto.setContent(post.getContent());
             dto.setUserName(post.getUser().getName());
             dto.setUserId(post.getUser().getUserId());
+            dto.setCreatedAt(post.getCreatedAt()); // ✅ 작성일 추가
 
             return new ResponseEntity<>(dto, HttpStatus.OK);
         } catch (Exception e) {
@@ -102,7 +123,8 @@ public class PostController {
         }
     }
 
- // 댓글 등록
+
+    // 댓글 등록
     @PostMapping("/{postId}/comments")
     public ResponseEntity<?> createComment(
             @PathVariable("postId") Long postId,
@@ -124,8 +146,8 @@ public class PostController {
 
             List<CommentDTO> dtos = comments.stream().map(comment -> {
                 CommentDTO dto = new CommentDTO();
-                dto.setId(comment.getId()); // 🔥 필수: 댓글 ID 내려주기
-                dto.setUserId(comment.getUser().getUserId()); // String
+                dto.setId(comment.getId());
+                dto.setUserId(comment.getUser().getUserId());
                 dto.setContent(comment.getContent());
                 dto.setCreatedAt(comment.getCreatedAt());
                 return dto;
@@ -165,15 +187,14 @@ public class PostController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("수정 권한 없음");
         }
     }
-    
- // 게시글 수정
+
+    // 게시글 수정
     @PutMapping("/{id}")
     public ResponseEntity<?> updatePost(@PathVariable("id") Long id, @RequestBody PostDTO postDTO) {
         try {
             Post post = postRepository.findById(id)
                     .orElseThrow(() -> new RuntimeException("Post not found"));
 
-            // ✅ 작성자 확인: 로그인한 유저와 일치해야 수정 가능
             if (!post.getUser().getUserId().equals(postDTO.getUserId())) {
                 return new ResponseEntity<>("수정 권한 없음", HttpStatus.FORBIDDEN);
             }
@@ -189,18 +210,16 @@ public class PostController {
             return new ResponseEntity<>("게시글 수정 실패", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-    
- // 게시글 삭제
+
+    // 게시글 삭제
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deletePost(@PathVariable("id") Long id) {
         try {
-            // 1. 먼저 댓글 삭제
             List<Comment> comments = commentService.getCommentsByPostId(id);
             for (Comment comment : comments) {
                 commentService.deleteComment(comment.getId(), comment.getUser().getUserId());
             }
 
-            // 2. 게시글 삭제
             postRepository.deleteById(id);
 
             return ResponseEntity.ok().build();
@@ -209,5 +228,4 @@ public class PostController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("게시글 삭제 실패");
         }
     }
-
 }

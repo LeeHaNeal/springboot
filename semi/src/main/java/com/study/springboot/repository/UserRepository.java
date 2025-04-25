@@ -1,8 +1,8 @@
 package com.study.springboot.repository;
 
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.repository.CrudRepository;
+
 import com.study.springboot.entity.User;
 
-public interface UserRepository extends JpaRepository<User, String> {
-    // JPA 기본 메소드 제공, 추가적인 쿼리 메소드 필요 시 작성
+public interface UserRepository extends CrudRepository<User, String> {
 }

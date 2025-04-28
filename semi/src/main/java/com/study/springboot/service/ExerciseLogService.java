@@ -36,4 +36,11 @@ public class ExerciseLogService {
         Integer calories = exerciseLogRepository.sumTodayCaloriesByUserId(userId, today);
         return calories != null ? calories : 0;
     }
+    
+    
+    // 운동 불러오기 메인
+    public List<String> getTodayExerciseTypes(String userId) {
+//        Pageable pageable = PageRequest.of(0, 3);  // 처음 3개만
+        return exerciseLogRepository.findTodayExerciseTypes(userId);
+    }
 }

@@ -6,19 +6,12 @@ import java.util.stream.StreamSupport;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.study.springboot.entity.User;
 import com.study.springboot.repository.UserRepository;
-import com.study.springboot.service.ExerciseLogService; // ✅ 추가
+import com.study.springboot.service.ExerciseLogService;
+import com.study.springboot.service.UserService;
 
 @RestController
 @RequestMapping("/users")
@@ -26,11 +19,15 @@ import com.study.springboot.service.ExerciseLogService; // ✅ 추가
 public class UserController {
 
     private final UserRepository userRepository;
-    private final ExerciseLogService exerciseLogService; // ✅ 서비스 필드 추가
+    private final ExerciseLogService exerciseLogService;
+    private final UserService userService;
 
-    public UserController(UserRepository userRepository, ExerciseLogService exerciseLogService) {
+    public UserController(UserRepository userRepository,
+                          ExerciseLogService exerciseLogService,
+                          UserService userService) {
         this.userRepository = userRepository;
-        this.exerciseLogService = exerciseLogService; // ✅ 생성자에서 주입
+        this.exerciseLogService = exerciseLogService;
+        this.userService = userService; 
     }
 
     @GetMapping
@@ -38,7 +35,6 @@ public class UserController {
         return StreamSupport.stream(userRepository.findAll().spliterator(), false)
                             .collect(Collectors.toList());
     }
-
 
     @PostMapping
     public User createUser(@RequestBody User user) {
@@ -64,7 +60,6 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
     }
 
-    // ✅ 오늘 소모한 칼로리 조회
     @GetMapping("/{id}/burned-calories")
     public ResponseEntity<Integer> getTodayBurnedCalories(@PathVariable("id") String id) {
         int todayCalories = exerciseLogService.getTodayCalories(id);
@@ -72,7 +67,8 @@ public class UserController {
     }
 
     @DeleteMapping("/{id}")
-    public void deleteUser(@PathVariable("id") String id) {
-        userRepository.deleteById(id);
+    public ResponseEntity<Void> deleteUser(@PathVariable("id") String id) {
+    	userService.deleteUserAndRelatedData(id);
+        return ResponseEntity.noContent().build();
     }
 }

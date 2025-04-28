@@ -1,4 +1,3 @@
-// 📁 dto/ExerciseLogDto.java
 package com.study.springboot.dto;
 
 import lombok.*;

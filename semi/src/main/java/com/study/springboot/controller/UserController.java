@@ -73,7 +73,7 @@ public class UserController {
     }
     
     
- // UserController.java 추가
+ 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody User loginRequest) {
         User user = userRepository.findById(loginRequest.getUserId()).orElse(null);
